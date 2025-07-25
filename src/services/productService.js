@@ -3,7 +3,16 @@ const { Op } = require("sequelize");
 
 class ProductService {
   async createProduct(productData) {
-    return await Product.create(productData);
+    try {
+      const product = await Product.create({
+        ...productData,
+        is_active: true,
+      });
+
+      return product;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAllProducts(filters = {}) {

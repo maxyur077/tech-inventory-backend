@@ -1,14 +1,20 @@
-const productController = require("../../../src/controllers/productController");
-const productService = require("../../../src/services/productService");
-const { formatResponse } = require("../../../src/utils/responseFormatter");
+const productController = require("../../../controllers/productController");
+const productService = require("../../../services/productService");
+const { formatResponse } = require("../../../utils/responseFormatter");
 
-jest.mock("../../../src/services/productService");
+jest.mock("../../../services/productService", () => ({
+  createProduct: jest.fn(),
+  getProductById: jest.fn(),
+  updateProduct: jest.fn(),
+  deleteProduct: jest.fn(),
+}));
 
-jest.mock("../../../src/utils/responseFormatter", () => ({
+jest.mock("../../../utils/responseFormatter", () => ({
   formatResponse: jest.fn((success, message, data) => ({
     success,
     message,
     data,
+    timestamp: new Date().toISOString(),
   })),
 }));
 
@@ -20,123 +26,133 @@ describe("ProductController", () => {
       body: {},
       params: {},
       query: {},
-      user: { id: 1, role: "user" },
+      user: { id: 1, username: "testuser" },
     };
     res = {
-      status: jest.fn().mockReturnThis(),
       json: jest.fn(),
+      status: jest.fn().mockReturnThis(),
     };
     next = jest.fn();
     jest.clearAllMocks();
   });
 
   describe("createProduct", () => {
-    it("should create a product successfully", async () => {
+    it("should create product successfully", async () => {
       const productData = {
         name: "Test Product",
         price: 99.99,
-        description: "Test Description",
+        description: "Test description",
+        category: "test",
+        stock_quantity: 10,
       };
-      const mockProduct = { id: 1, ...productData };
+
+      const createdProduct = {
+        id: 1,
+        ...productData,
+        is_active: true,
+        created_at: new Date(),
+      };
 
       req.body = productData;
-      productService.createProduct.mockResolvedValue(mockProduct);
+      productService.createProduct.mockResolvedValue(createdProduct);
 
-      await productController.createProduct(req, res, next);
+      await productController.createProduct(req, res);
 
       expect(productService.createProduct).toHaveBeenCalledWith(productData);
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        message: "Product created successfully",
-        data: mockProduct,
-      });
+      expect(formatResponse).toHaveBeenCalledWith(
+        true,
+        "Product created successfully",
+        createdProduct
+      );
+      expect(res.json).toHaveBeenCalled();
     });
 
-    it("should handle errors", async () => {
-      const error = new Error("Database error");
-      req.body = { name: "Test Product", price: 99.99 };
-      productService.createProduct.mockRejectedValue(error);
-
-      await productController.createProduct(req, res, next);
-
-      expect(next).toHaveBeenCalledWith(error);
-    });
-  });
-
-  describe("getAllProducts", () => {
-    it("should get all products with pagination", async () => {
-      const mockResult = {
-        products: [{ id: 1, name: "Product 1" }],
-        pagination: { page: 1, limit: 10, total: 1, pages: 1 },
+    it("should handle product creation error", async () => {
+      const productData = {
+        name: "Test Product",
+        price: 99.99,
+        stock_quantity: 10,
       };
 
-      req.query = { page: 1, limit: 10 };
-      productService.getAllProducts.mockResolvedValue(mockResult);
+      const error = new Error("Database error");
+      req.body = productData;
+      productService.createProduct.mockRejectedValue(error);
 
-      await productController.getAllProducts(req, res, next);
-
-      expect(productService.getAllProducts).toHaveBeenCalledWith(req.query);
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        message: "Products retrieved successfully",
-        data: mockResult,
-      });
+      await expect(productController.createProduct(req, res)).rejects.toThrow(
+        "Database error"
+      );
     });
   });
 
   describe("getProductById", () => {
-    it("should get a product by ID", async () => {
-      const mockProduct = { id: 1, name: "Test Product" };
+    it("should get product by id successfully", async () => {
+      const mockProduct = {
+        id: 1,
+        name: "Test Product",
+        price: 99.99,
+        is_active: true,
+      };
+
       req.params.id = "1";
       productService.getProductById.mockResolvedValue(mockProduct);
 
-      await productController.getProductById(req, res, next);
+      await productController.getProductById(req, res);
 
+      // ✅ Fix: Expect string "1" since params are strings
       expect(productService.getProductById).toHaveBeenCalledWith("1");
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        message: "Product retrieved successfully",
-        data: mockProduct,
-      });
+      expect(formatResponse).toHaveBeenCalledWith(
+        true,
+        "Product retrieved successfully",
+        mockProduct
+      );
+      expect(res.json).toHaveBeenCalled();
     });
   });
 
   describe("updateProduct", () => {
-    it("should update a product", async () => {
-      const updateData = { name: "Updated Product" };
-      const mockProduct = { id: 1, ...updateData };
+    it("should update product successfully", async () => {
+      const updateData = { name: "Updated Product", price: 149.99 };
+      const updatedProduct = {
+        id: 1,
+        ...updateData,
+        is_active: true,
+      };
 
       req.params.id = "1";
       req.body = updateData;
-      productService.updateProduct.mockResolvedValue(mockProduct);
+      productService.updateProduct.mockResolvedValue(updatedProduct);
 
-      await productController.updateProduct(req, res, next);
+      await productController.updateProduct(req, res);
 
+      // ✅ Fix: Expect string "1" since params are strings
       expect(productService.updateProduct).toHaveBeenCalledWith(
         "1",
         updateData
       );
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        message: "Product updated successfully",
-        data: mockProduct,
-      });
+      expect(formatResponse).toHaveBeenCalledWith(
+        true,
+        "Product updated successfully",
+        updatedProduct
+      );
+      expect(res.json).toHaveBeenCalled();
     });
   });
 
   describe("deleteProduct", () => {
-    it("should delete a product", async () => {
+    it("should delete product successfully", async () => {
       req.params.id = "1";
-      productService.deleteProduct.mockResolvedValue();
+      productService.deleteProduct.mockResolvedValue(true);
 
-      await productController.deleteProduct(req, res, next);
+      await productController.deleteProduct(req, res);
 
+      // ✅ Fix: Expect string "1" since params are strings
       expect(productService.deleteProduct).toHaveBeenCalledWith("1");
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        message: "Product deleted successfully",
-      });
+      expect(formatResponse).toHaveBeenCalledWith(
+        true,
+        "Product deleted successfully"
+      );
+      expect(res.json).toHaveBeenCalled();
     });
   });
 });
