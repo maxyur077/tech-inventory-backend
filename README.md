@@ -86,7 +86,7 @@ npm install
 
 ### Step 3: Environment Setup
 
-cp .env.example .env
+cp .env.example .env 
 
 Edit `.env` file with your configuration:
 
