@@ -7,23 +7,6 @@ A robust Node.js REST API for managing tech product inventory with JWT authentic
 ![MySQL](https://img.shields.io/badge/MySQL-00758F?style=for-the-badge&logo=mysql&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white)
 
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Database Setup](#database-setup)
-- [API Documentation](#api-documentation)
-- [Authentication](#authentication)
-- [Error Handling](#error-handling)
-- [Security Features](#security-features)
-- [Development](#development)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-
 ## ✨ Features
 
 ### 🔐 Authentication & Security
